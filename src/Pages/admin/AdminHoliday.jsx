@@ -99,11 +99,19 @@ const AdminHoliday = () => {
     }
 
     // For admin, show all groups
-    return [...new Set(holidays.map((h) => h.group.name))];
+    const groups = [...new Set(holidays.map((h) => h.group.name))];
+    if (groups.includes("BangaloreUANDWE") && !groups.includes("BangaloreUANDWELabs")) {
+      groups.push("BangaloreUANDWELabs");
+    }
+    return groups;
   };
 
   const filteredByGroup = Array.isArray(holidays)
-    ? holidays.filter((h) => h.group.name === selectedGroup)
+    ? holidays.filter((h) => {
+        if (selectedGroup === "BangaloreUANDWELabs" && h.group.name === "BangaloreUANDWE") return true;
+        if (selectedGroup === "BangaloreUANDWE" && h.group.name === "BangaloreUANDWELabs") return true;
+        return h.group.name === selectedGroup;
+      })
     : [];
 
   const filteredHolidays = selectedMonth !== null
@@ -426,7 +434,7 @@ const AdminHoliday = () => {
                         {userRole === "Admin" && (
                           <div className="mt-2">
                             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                              {item.group.name}
+                              {selectedGroup === "BangaloreUANDWELabs" && item.group.name === "BangaloreUANDWE" ? "BangaloreUANDWELabs" : item.group.name}
                             </span>
                           </div>
                         )}
