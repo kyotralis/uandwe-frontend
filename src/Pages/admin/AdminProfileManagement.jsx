@@ -90,9 +90,7 @@ const AdminProfileManagement = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
-
-  const { availableCompanies: companies, companiesLoading } = useCompany();
-
+  const { availableCompanies: companies, companiesLoading, refreshCompanies } = useCompany();
   const computeCompletion = (data) => {
     if (!data) return 0;
     let fields = [
@@ -200,7 +198,8 @@ const AdminProfileManagement = () => {
     if (role !== 'Admin') { navigate('/home'); return; }
     fetchProfiles();
     fetchStats();
-  }, [currentUser]);
+    refreshCompanies();
+  }, [currentUser, navigate]);
 
   useEffect(() => {
     let filtered = [...profiles];
@@ -296,7 +295,7 @@ const AdminProfileManagement = () => {
       );
     }
 
-    if (type === "select" && options.length) {
+    if (type === "select") {
       return (
         <div className="mb-3">
           <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
@@ -736,6 +735,21 @@ const AdminProfileManagement = () => {
                 </div>
               </div>
 
+              {/* PF Details */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2"><FileText size={16} /> PF Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    {renderField("Previous UAN", "previousUan")}
+                    {renderField("First Time Employment", "firstTimeEmployment")}
+                  </div>
+                  <div>
+                    {renderField("PF Nominee Name", "pfNomineeName")}
+                    {renderField("PF Nominee Relationship", "pfNomineeRelationship")}
+                  </div>
+                </div>
+              </div>
+
               {/* Documents */}
               <div className="mb-6">
                 <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2"><FileText size={16} /> Educational & Professional Documents</h4>
@@ -745,11 +759,14 @@ const AdminProfileManagement = () => {
                     {renderDocumentLink("12th / PUC Certificate", selectedProfile.twelfthCertificateLink)}
                     {renderDocumentLink("Resume / CV", selectedProfile.resumeDocumentLink)}
                     {renderDocumentLink("Profile Photo", selectedProfile.profilePhotoLink)}
+                    {renderDocumentLink("Relieving Letter 1", selectedProfile.relievingLetter1Link)}
+                    {renderDocumentLink("Relieving Letter 2", selectedProfile.relievingLetter2Link)}
                   </div>
                   <div>
                     {renderDocumentLink("Graduation Certificate", selectedProfile.graduationCertificateLink)}
                     {renderDocumentLink("Post Graduation Certificate", selectedProfile.postGraduationCertificateLink)}
                     {renderDocumentLink("Visa Document", selectedProfile.visaDocumentLink)}
+                    {renderDocumentLink("PF Passbook Screenshot", selectedProfile.pfPassbookLink)}
                   </div>
                 </div>
               </div>

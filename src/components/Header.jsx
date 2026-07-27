@@ -23,6 +23,9 @@ const Header = () => {
   // Check if user is Client Interviewer
   const isClientInterviewer = role === "Client Interviewer";
 
+  // Check if user is Sales
+  const isSales = role === "Sales";
+
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -129,14 +132,18 @@ const Header = () => {
             </h1>
           </div>
 
-          {/* CENTER: Navigation */}
           <div className="hidden md:flex items-center gap-6">
             {/* For Client Interviewer AND Interviewer - ONLY show Demand */}
             {(isClientInterviewer || isInterviewer) ? (
               // Interviewer and Client Interviewer - ONLY show Demand
               navItem("Demand", "/demand")
+            ) : isSales ? (
+              <>
+                {navItem("Home", "/home")}
+                {navItem("Demand", "/demand")}
+              </>
             ) : (
-              // Other roles (Admin and Recruiter) - show full navigation
+              // Other roles (Admin, Recruiter, HR, etc.) - show full navigation
               <>
                 {/* Show Home for Admin and Recruiter */}
                 {navItem("Home", "/home")}

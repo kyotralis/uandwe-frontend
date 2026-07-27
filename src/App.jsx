@@ -35,6 +35,8 @@ import AdminMyclient from "./Pages/admin/AdminMyclient.jsx";
 import Myclient from "./Pages/Details/Myclient.jsx";
 import Timesheet from "./Pages/Details/Timesheet.jsx";
 import AdminTimesheet from "./Pages/admin/AdminTimesheet.jsx";
+import AdminNewsFeeder from "./Pages/admin/AdminNewsFeeder";
+import NewsFeeder from "./Pages/Details/NewsFeeder";
 
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -172,6 +174,24 @@ function App() {
               <ModuleAccessGuard moduleName="Holiday Calendar">
                 <Holiday />
               </ModuleAccessGuard>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/news-feeder"
+          element={
+            <ProtectedRoute>
+              <NewsFeeder />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/news-feeder"
+          element={
+            <ProtectedRoute allowedRoles={["Admin"]}>
+              <AdminNewsFeeder />
             </ProtectedRoute>
           }
         />

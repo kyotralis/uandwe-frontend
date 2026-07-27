@@ -11,12 +11,13 @@ import { confirmAction } from '../../utils/toastUtils';
 import Button from '../../components/Button';
 import DashboardLayout, { DashboardContainer } from '../../components/dashboard/DashboardLayout';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import toast from 'react-hot-toast';
 import { API_BASE_URL as GLOBAL_API_BASE_URL } from '../../config/constants.js';
 
 const API_BASE_URL = `${GLOBAL_API_BASE_URL}/api/leave`;
 const PD_API_URL = `${GLOBAL_API_BASE_URL}/api/personal-details`;
 
-const LEAVE_TYPES = ['Leave', 'Work From Home'];
+const LEAVE_TYPES = ['Leave', 'Sick Leave', 'Work From Home'];
 const REASONS = [
   'Family Function', 'Medical Emergency', 'Personal Work',
   'Vacation', 'Marriage', 'Child Care', 'Travel', 'Other'
@@ -31,11 +32,12 @@ export default function LeaveManagement() {
   const userRole = storedUser?.role;
 
   const [employeeDetails, setEmployeeDetails] = useState({
-    employeeNumber: '', employeeName: '', company: '', userId: ''
+    employeeNumber: '', employeeName: '', company: '', userId: '', nationality: ''
   });
 
   const [balances, setBalances] = useState({
     annualEntitlement: 11, annualUsed: 0, annualBalance: 11,
+    sickEntitlement: 0, sickUsed: 0, sickBalance: 0,
     wfhUsed: 0, totalSubmitted: 0, pendingRequests: 0,
     approvedRequests: 0, rejectedRequests: 0
   });
@@ -119,8 +121,9 @@ export default function LeaveManagement() {
         empNum = pd.employeeNumber || '';
         empName = pd.fullName || '';
         company = pd.assignedCompany || pd.assignedClient || pd.clientName || '';
+        const nationality = pd.nationality || '';
 
-        setEmployeeDetails({ employeeNumber: empNum, employeeName: empName, company, userId });
+        setEmployeeDetails({ employeeNumber: empNum, employeeName: empName, company, userId, nationality });
       }
 
       // 2. Fetch Leave Details
@@ -250,12 +253,51 @@ export default function LeaveManagement() {
     return count;
   };
 
+  const isSameWeek = (d1, d2) => {
+    const date1 = new Date(d1);
+    const date2 = new Date(d2);
+    // getDay() is 0 for Sunday, 1 for Monday, etc.
+    const day1 = date1.getDay() === 0 ? 7 : date1.getDay();
+    date1.setDate(date1.getDate() - day1 + 1); // Set to Monday
+    date1.setHours(0,0,0,0);
+    const day2 = date2.getDay() === 0 ? 7 : date2.getDay();
+    date2.setDate(date2.getDate() - day2 + 1); // Set to Monday
+    date2.setHours(0,0,0,0);
+    return date1.getTime() === date2.getTime();
+  };
+
+  const checkWfhLimit = (startDate) => {
+    if (!['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs'].includes(employeeDetails.company)) return true; // Disabled for others anyway
+    const existingWfhThisWeek = history.find(l => 
+      l.leaveType === 'Work From Home' && 
+      l.status !== 'Rejected' && 
+      isSameWeek(startDate, l.startDate)
+    );
+    return !existingWfhThisWeek;
+  };
+
   useEffect(() => {
     const days = calculateTotalDays(formData.startDate, formData.endDate, formData.startTime, formData.endTime);
     setFormData(prev => ({ ...prev, totalDays: days }));
   }, [formData.startDate, formData.endDate, formData.startTime, formData.endTime, companyHolidays]);
 
   const handleMiniCalendarClick = (dateStr) => {
+    const isWeekend = new Date(dateStr).getDay() === 0 || new Date(dateStr).getDay() === 6;
+    const isHoliday = companyHolidays.includes(dateStr);
+    const hasApprovedLeave = history.find(l => l.status === 'Approved' && dateStr >= l.startDate && dateStr <= l.endDate);
+
+    if (isHoliday) {
+      toast.error("It is a holiday. Leave cannot be applied.");
+      return;
+    }
+    if (hasApprovedLeave) {
+      toast.error("You already have an approved leave or WFH on this date.");
+      return;
+    }
+    if (isWeekend) {
+      return;
+    }
+
     if (!inlineStartDate || (inlineStartDate && inlineEndDate)) {
       setInlineStartDate(dateStr);
       setInlineEndDate(null);
@@ -276,9 +318,12 @@ export default function LeaveManagement() {
       setError("Please select both start and end date on the calendar.");
       return;
     }
-    const days = calculateTotalDays(inlineStartDate, inlineEndDate, '09:00', '18:00');
     if (days <= 0) {
-      setError("Total chargeable days must be greater than 0.");
+      if (companyHolidays.includes(inlineStartDate) || companyHolidays.includes(inlineEndDate)) {
+        toast.error("It is a holiday. Leave cannot be applied.");
+      } else {
+        setError("Total chargeable days must be greater than 0.");
+      }
       return;
     }
     if (!inlineLeaveType) {
@@ -288,6 +333,30 @@ export default function LeaveManagement() {
     if (!inlineReason) {
       setError("Please select a reason.");
       return;
+    }
+    if (!inlineCustomReason || inlineCustomReason.trim() === '') {
+      setError("Additional Reason is mandatory.");
+      return;
+    }
+    const wordCount = inlineCustomReason.trim().split(/\\s+/).filter(Boolean).length;
+    if (wordCount > 50) {
+      setError("Additional Reason cannot exceed 50 words.");
+      return;
+    }
+
+    if (inlineLeaveType === 'Work From Home') {
+      if (!['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs'].includes(employeeDetails.company)) {
+        setError("WFH is available only for UANDWE Bangalore employees.");
+        return;
+      }
+      if (days > 1) {
+        setError("WFH limit reached. Only one Work From Home request is allowed per week.");
+        return;
+      }
+      if (!checkWfhLimit(inlineStartDate)) {
+        setError("You have already used your Work From Home request for this week.");
+        return;
+      }
     }
 
     const isAnnualLeave = inlineLeaveType === 'Annual Leave' || inlineLeaveType === 'Leave';
@@ -350,12 +419,40 @@ export default function LeaveManagement() {
       return;
     }
     if (formData.totalDays <= 0) {
-      setError("Total days must be greater than 0 (Check weekends/holidays).");
+      if (companyHolidays.includes(formData.startDate) || companyHolidays.includes(formData.endDate)) {
+        toast.error("It is a holiday. Leave cannot be applied.");
+      } else {
+        setError("Total days must be greater than 0 (Check weekends/holidays).");
+      }
       return;
     }
     if (!formData.reason) {
       setError("Please select a reason for the leave.");
       return;
+    }
+    if (!formData.customReason || formData.customReason.trim() === '') {
+      setError("Additional Reason is mandatory.");
+      return;
+    }
+    const wordCount = formData.customReason.trim().split(/\\s+/).filter(Boolean).length;
+    if (wordCount > 50) {
+      setError("Additional Reason cannot exceed 50 words.");
+      return;
+    }
+
+    if (formData.leaveType === 'Work From Home') {
+      if (!['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs'].includes(employeeDetails.company)) {
+        setError("WFH is available only for UANDWE Bangalore employees.");
+        return;
+      }
+      if (formData.totalDays > 1) {
+        setError("WFH limit reached. Only one Work From Home request is allowed per week.");
+        return;
+      }
+      if (!checkWfhLimit(formData.startDate)) {
+        setError("You have already used your Work From Home request for this week.");
+        return;
+      }
     }
 
     const isAnnualLeave = formData.leaveType === 'Annual Leave' || formData.leaveType === 'Leave';
@@ -510,7 +607,26 @@ export default function LeaveManagement() {
               </div>
             </div>
 
-            {/* WFH & Comp Off */}
+            {employeeDetails.nationality === 'INDIA' && (
+              <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm flex flex-col justify-between">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center"><Activity size={20} /></div>
+                  <h3 className="font-semibold text-gray-800">Sick Leave</h3>
+                </div>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-3xl font-bold text-gray-900">{balances.sickBalance}</p>
+                    <p className="text-xs text-gray-500 font-medium">Days Available</p>
+                  </div>
+                  <div className="text-right text-xs text-gray-500 space-y-1">
+                    <p>Total: {balances.sickEntitlement}</p>
+                    <p>Used: {balances.sickUsed}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* WFH Used */}
             <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm flex flex-col justify-between">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center"><Briefcase size={20} /></div>
@@ -723,10 +839,13 @@ export default function LeaveManagement() {
                 </div>
 
                 <div className="grid grid-cols-7 gap-1">
-                  {generateCalendarCells().map((day, idx) => {
-                    if (!day) return <div key={idx} />;
+                  {(() => {
+                    const todayObj = new Date();
+                    const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+                    return generateCalendarCells().map((day, idx) => {
+                      if (!day) return <div key={idx} />;
 
-                    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const isWeekend = new Date(currentYear, currentMonth, day).getDay() === 0 || new Date(currentYear, currentMonth, day).getDay() === 6;
                     const isHoliday = companyHolidays.includes(dateStr);
 
@@ -740,13 +859,16 @@ export default function LeaveManagement() {
 
                     const isSelectedStart = dateStr === inlineStartDate;
                     const isSelectedEnd = dateStr === inlineEndDate;
-                    const isWithinRange = inlineStartDate && inlineEndDate && dateStr > inlineStartDate && dateStr < inlineEndDate;
+                    const isWithinRange = inlineStartDate && inlineEndDate && dateStr > inlineStartDate && dateStr < inlineEndDate && !isWeekend;
                     const isSelected = isSelectedStart || isSelectedEnd || isWithinRange;
+                    const isToday = dateStr === todayStr;
 
                     if (isSelectedStart || isSelectedEnd) {
                       cellClass += " bg-blue-600 text-white font-bold shadow-md";
                     } else if (isWithinRange) {
                       cellClass += " bg-blue-100 text-blue-900";
+                    } else if (isToday) {
+                      cellClass += " border-2 border-blue-400 font-bold text-blue-700 bg-blue-50";
                     }
 
                     if (approvedLeave) {
@@ -755,7 +877,7 @@ export default function LeaveManagement() {
                         <div key={idx} className="py-1 flex flex-col items-center justify-center group" title={approvedLeave.leaveType}>
                           <div className={`w-7 h-7 flex items-center justify-center rounded-full mx-auto
                           ${isWfh ? 'bg-purple-50 border border-purple-200' : 'bg-emerald-50 border border-emerald-200'}`}>
-                            <span className="text-sm leading-none select-none">{isWfh ? '💻' : '🏖️'}</span>
+                            <span className="text-sm leading-none select-none">{isWfh ? '🏠' : '🏖️'}</span>
                           </div>
                           <span className={`block text-center text-[10px] font-semibold leading-tight mt-0.5 ${isWfh ? 'text-purple-700' : 'text-emerald-700'}`}>{day}</span>
                         </div>
@@ -785,13 +907,13 @@ export default function LeaveManagement() {
                         </div>
                       </div>
                     );
-                  })}
+                  })})()}
                 </div>
 
                 <div className="mt-6 space-y-2 text-xs">
                   <div className="flex items-center gap-2"><div className="w-6 h-6 flex justify-center items-center rounded-full bg-amber-50 border border-amber-200 text-sm">😊</div> <span className="text-gray-600">Company Holiday</span></div>
                   <div className="flex items-center gap-2"><div className="w-6 h-6 flex justify-center items-center rounded-full bg-emerald-50 border border-emerald-200 text-sm">🏖️</div> <span className="text-gray-600">Approved Leave</span></div>
-                  <div className="flex items-center gap-2"><div className="w-6 h-6 flex justify-center items-center rounded-full bg-purple-50 border border-purple-200 text-sm">💻</div> <span className="text-gray-600">Work From Home</span></div>
+                  <div className="flex items-center gap-2"><div className="w-6 h-6 flex justify-center items-center rounded-full bg-purple-50 border border-purple-200 text-sm">🏠</div> <span className="text-gray-600">Work From Home</span></div>
                   <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full text-red-400 bg-red-50 ml-1.5"></div> <span className="text-gray-600 ml-1.5">Weekend</span></div>
                 </div>
 
@@ -819,7 +941,30 @@ export default function LeaveManagement() {
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         >
                           <option value="">Select Type</option>
-                          {LEAVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                          {LEAVE_TYPES.map(t => {
+                            const isWfh = t === 'Work From Home';
+                            const isEligibleCompany = ['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs'].includes(employeeDetails.company);
+                            let isLimitReached = false;
+                            
+                            if (isWfh && isEligibleCompany && inlineStartDate) {
+                                isLimitReached = !checkWfhLimit(inlineStartDate);
+                            }
+                            
+                            const isDisabled = (isWfh && !isEligibleCompany) || isLimitReached;
+                            
+                            if (t === 'Sick Leave' && employeeDetails.nationality !== 'INDIA') return null;
+                            if (t === 'Leave' && employeeDetails.nationality === 'INDIA') return null; // India uses Sick/Annual specifically
+                            
+                            let title = "";
+                            if (isWfh && !isEligibleCompany) title = "WFH is available only for UANDWE Bangalore employees.";
+                            else if (isLimitReached) title = "You have already used your WFH request for this week.";
+                            
+                            return (
+                              <option key={t} value={t} disabled={isDisabled} title={title}>
+                                {t} {isDisabled ? '(Unavailable)' : ''}
+                              </option>
+                            );
+                          })}
                         </select>
                       </div>
                       <div>
@@ -831,11 +976,21 @@ export default function LeaveManagement() {
                           <option value="">Select Reason</option>
                           {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
-                        <textarea
-                          value={inlineCustomReason} onChange={(e) => setInlineCustomReason(e.target.value)}
-                          placeholder="Additional notes (optional)..." rows="2"
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        ></textarea>
+                        <div className="relative">
+                          <textarea
+                            value={inlineCustomReason} onChange={(e) => {
+                              const words = e.target.value.trim().split(/\\s+/).filter(Boolean);
+                              if (words.length <= 50 || e.target.value.length < inlineCustomReason.length) {
+                                setInlineCustomReason(e.target.value);
+                              }
+                            }}
+                            placeholder="Additional Reason * (Mandatory)" rows="2"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pb-6"
+                          ></textarea>
+                          <span className={`absolute bottom-2 right-2 text-[10px] ${inlineCustomReason.trim().split(/\\s+/).filter(Boolean).length >= 50 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                            {inlineCustomReason.trim().split(/\\s+/).filter(Boolean).length} / 50 words
+                          </span>
+                        </div>
                       </div>
                       {(() => {
                         const days = inlineStartDate && inlineEndDate ? calculateTotalDays(inlineStartDate, inlineEndDate, '09:00', '18:00') : 0;
@@ -914,7 +1069,30 @@ export default function LeaveManagement() {
                       className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     >
                       <option value="">Select Type</option>
-                      {LEAVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      {LEAVE_TYPES.map(t => {
+                        const isWfh = t === 'Work From Home';
+                        const isEligibleCompany = ['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs'].includes(employeeDetails.company);
+                        let isLimitReached = false;
+                        
+                        if (isWfh && isEligibleCompany && formData.startDate) {
+                           isLimitReached = !checkWfhLimit(formData.startDate);
+                        }
+                        
+                        const isDisabled = (isWfh && !isEligibleCompany) || isLimitReached;
+                        
+                        if (t === 'Sick Leave' && employeeDetails.nationality !== 'INDIA') return null;
+                        if (t === 'Leave' && employeeDetails.nationality === 'INDIA') return null; // India uses Sick/Annual specifically
+                        
+                        let title = "";
+                        if (isWfh && !isEligibleCompany) title = "WFH is available only for UANDWE Bangalore employees.";
+                        else if (isLimitReached) title = "You have already used your WFH request for this week.";
+
+                        return (
+                          <option key={t} value={t} disabled={isDisabled} title={title}>
+                            {t} {isDisabled ? '(Unavailable)' : ''}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -970,11 +1148,21 @@ export default function LeaveManagement() {
                       <option value="">Select Reason</option>
                       {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
-                    <textarea
-                      name="customReason" value={formData.customReason} onChange={handleInputChange}
-                      placeholder="Additional details (optional)..." rows="3"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 resize-none outline-none focus:ring-2 focus:ring-blue-500"
-                    ></textarea>
+                    <div className="relative">
+                      <textarea
+                        name="customReason" value={formData.customReason} onChange={(e) => {
+                          const words = e.target.value.trim().split(/\\s+/).filter(Boolean);
+                          if (words.length <= 50 || e.target.value.length < formData.customReason.length) {
+                            handleInputChange(e);
+                          }
+                        }}
+                        placeholder="Additional Reason * (Mandatory)" rows="3"
+                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 resize-none outline-none focus:ring-2 focus:ring-blue-500 pb-7"
+                      ></textarea>
+                      <span className={`absolute bottom-3 right-4 text-xs ${formData.customReason.trim().split(/\\s+/).filter(Boolean).length >= 50 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                        {formData.customReason.trim().split(/\\s+/).filter(Boolean).length} / 50 words
+                      </span>
+                    </div>
                   </div>
 
                   <div>

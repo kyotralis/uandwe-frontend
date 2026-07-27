@@ -347,6 +347,8 @@ const CreateUser = () => {
       return "bg-gray-100 text-gray-700";
     } else if (role === "HR") {
       return "bg-pink-100 text-pink-700";
+    } else if (role === "Sales") {
+      return "bg-teal-100 text-teal-700";
     } else {
       return "bg-gray-100 text-gray-700";
     }
@@ -489,6 +491,7 @@ const CreateUser = () => {
                     <option value="Admin">Admin (Full access)</option>
                     <option value="Employee">Employee (View-only access)</option>
                     <option value="HR">HR (Human Resources Manager)</option>
+                    <option value="Sales">Sales (Home and Demand access only)</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
                     Admin can edit/delete demands and manage users. Recruiter can view and manage candidates.

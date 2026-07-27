@@ -172,12 +172,35 @@ export default function PayrollDashboard({ user }) {
                           <span className="text-red-600 font-bold">-₹{selectedPayroll.lopDeductionAmount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                       )}
-                      {selectedPayroll.otherDeductions > 0 && (
-                        <div className="flex justify-between items-center p-3 rounded-lg hover:bg-gray-50">
-                          <span className="text-gray-600 font-medium">Other Deductions</span>
-                          <span className="text-red-600 font-bold">-₹{selectedPayroll.otherDeductions?.toLocaleString()}</span>
-                        </div>
-                      )}
+                      {(() => {
+                        let parsedDeductions = [];
+                        try {
+                          if (selectedPayroll.otherDeductionsList) {
+                            parsedDeductions = typeof selectedPayroll.otherDeductionsList === 'string' 
+                              ? JSON.parse(selectedPayroll.otherDeductionsList) 
+                              : selectedPayroll.otherDeductionsList;
+                          }
+                        } catch (e) {}
+
+                        if (parsedDeductions && parsedDeductions.length > 0) {
+                          return parsedDeductions.map((deduction, idx) => (
+                            <div key={idx} className="flex justify-between items-center p-3 rounded-lg hover:bg-gray-50">
+                              <span className="text-gray-600 font-medium capitalize">{deduction.name || `Other Deduction ${idx + 1}`}</span>
+                              <span className="text-red-600 font-bold">-₹{parseFloat(deduction.amount || 0).toLocaleString()}</span>
+                            </div>
+                          ));
+                        }
+                        
+                        if (selectedPayroll.otherDeductions > 0) {
+                          return (
+                            <div className="flex justify-between items-center p-3 rounded-lg hover:bg-gray-50">
+                              <span className="text-gray-600 font-medium">Other Deductions</span>
+                              <span className="text-red-600 font-bold">-₹{selectedPayroll.otherDeductions?.toLocaleString()}</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                       {(selectedPayroll.lopDeductionAmount === 0 && selectedPayroll.otherDeductions === 0) && (
                         <div className="p-3 text-gray-500 italic">No deductions applied.</div>
                       )}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ChevronLeft, ChevronRight, Save, CheckCircle, Edit2, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, CheckCircle, Edit2, Calendar, Download } from "lucide-react";
 import DashboardLayout, { DashboardContainer } from '../../components/dashboard/DashboardLayout';
 import DashboardHeader from '../../components/dashboard/DashboardHeader';
 import { API_BASE_URL } from '../../config/constants';
@@ -137,6 +137,21 @@ const Timesheet = () => {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/timesheet/export?month=${monthStr}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Timesheet_Report_${monthStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error('Failed to export timesheet report');
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "Holiday": return "bg-pink-100 text-pink-700";
@@ -153,7 +168,9 @@ const Timesheet = () => {
 
   const isAdmin = user.role === "Admin";
   const isSupervisor = isAdmin || user.role === "Manager"; // Replace with your actual supervisor logic
-  const canEdit = isSupervisor && timesheetData?.status !== "Locked";
+  const canEdit = (viewMode === 'personal') ? 
+    (timesheetData?.status !== "Locked" && timesheetData?.status !== "Approved") : 
+    (isSupervisor && timesheetData?.status !== "Locked");
   const canApprove = isSupervisor && timesheetData?.status !== "Approved" && timesheetData?.status !== "Locked";
 
   return (
@@ -162,12 +179,19 @@ const Timesheet = () => {
         title="Timesheet Management"
         subtitle="Review and manage working hours"
         actions={
-          <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md p-1.5 rounded-xl border border-white/20 shadow-inner">
-            <button onClick={handlePrevMonth} className="p-1.5 text-white hover:bg-white/20 rounded-lg transition-colors"><ChevronLeft size={20} /></button>
-            <span className="font-semibold text-white min-w-[140px] text-center">
-              {currentMonth.toLocaleString("default", { month: "long", year: "numeric" })}
-            </span>
-            <button onClick={handleNextMonth} className="p-1.5 text-white hover:bg-white/20 rounded-lg transition-colors"><ChevronRight size={20} /></button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md p-1.5 rounded-xl border border-white/20 shadow-inner">
+              <button onClick={handlePrevMonth} className="p-1.5 text-white hover:bg-white/20 rounded-lg transition-colors"><ChevronLeft size={20} /></button>
+              <span className="font-semibold text-white min-w-[140px] text-center">
+                {currentMonth.toLocaleString("default", { month: "long", year: "numeric" })}
+              </span>
+              <button onClick={handleNextMonth} className="p-1.5 text-white hover:bg-white/20 rounded-lg transition-colors"><ChevronRight size={20} /></button>
+            </div>
+            {isAdmin && (
+              <button onClick={handleExportCSV} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl transition-colors font-medium border border-white/20">
+                <Download size={18} /> Export Report
+              </button>
+            )}
           </div>
         }
       />
@@ -343,6 +367,13 @@ const Timesheet = () => {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  {/* NOTE SECTION */}
+                  <div className="p-4 bg-yellow-50 border-t border-yellow-100 flex items-start gap-3">
+                    <span className="text-yellow-600 font-bold">Note:</span>
+                    <p className="text-sm text-yellow-800 font-medium">
+                      It is mandatory for all employees to update the number of hours worked for every working day.
+                    </p>
                   </div>
                 </>
               )}

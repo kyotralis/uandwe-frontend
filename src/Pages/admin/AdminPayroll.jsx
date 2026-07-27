@@ -32,8 +32,17 @@ export default function AdminPayroll({ user }) {
     month: MONTHS[new Date().getMonth()],
     year: CURRENT_YEAR,
     baseSalary: '',
-    allowances: '0',
-    otherDeductions: '0'
+    houseRentAllowance: '',
+    leaveTravelAllowance: '',
+    fourWheelerMaintenance: '',
+    telephoneAndInternet: '',
+    professionalDevelopment: '',
+    specialAllowance: '',
+    employerPf: '',
+    professionalTax: '',
+    insurance: '',
+    gratuity: '',
+    otherDeductionsList: []
   });
   const [payslipFile, setPayslipFile] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -80,6 +89,25 @@ export default function AdminPayroll({ user }) {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleOtherDeductionChange = (index, field, value) => {
+    const updatedList = [...formData.otherDeductionsList];
+    updatedList[index][field] = value;
+    setFormData(prev => ({ ...prev, otherDeductionsList: updatedList }));
+  };
+
+  const addOtherDeduction = () => {
+    setFormData(prev => ({
+      ...prev,
+      otherDeductionsList: [...prev.otherDeductionsList, { name: '', amount: '' }]
+    }));
+  };
+
+  const removeOtherDeduction = (index) => {
+    const updatedList = [...formData.otherDeductionsList];
+    updatedList.splice(index, 1);
+    setFormData(prev => ({ ...prev, otherDeductionsList: updatedList }));
+  };
+
   const handleFileChange = (e) => {
     setPayslipFile(e.target.files[0]);
   };
@@ -103,7 +131,11 @@ export default function AdminPayroll({ user }) {
     try {
       const submitData = new FormData();
       Object.keys(formData).forEach(key => {
-        submitData.append(key, formData[key]);
+        if (key === 'otherDeductionsList') {
+          submitData.append(key, JSON.stringify(formData[key]));
+        } else {
+          submitData.append(key, formData[key]);
+        }
       });
       if (payslipFile) {
         submitData.append('payslip', payslipFile);
@@ -117,7 +149,10 @@ export default function AdminPayroll({ user }) {
         setSuccess("Payroll record saved successfully.");
         setShowForm(false);
         setFormData({
-          employeeNumber: '', employeeName: '', month: filterMonth, year: filterYear, baseSalary: '', allowances: '0', otherDeductions: '0'
+          employeeNumber: '', employeeName: '', month: filterMonth, year: filterYear, 
+          baseSalary: '', houseRentAllowance: '', leaveTravelAllowance: '', fourWheelerMaintenance: '',
+          telephoneAndInternet: '', professionalDevelopment: '', specialAllowance: '',
+          employerPf: '', professionalTax: '', insurance: '', gratuity: '', otherDeductionsList: []
         });
         setPayslipFile(null);
         setEmpSearch('');
@@ -229,17 +264,85 @@ export default function AdminPayroll({ user }) {
                     {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Base Salary (₹) *</label>
-                  <input type="number" required min="0" step="0.01" name="baseSalary" value={formData.baseSalary} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="50000" />
+                {/* Allowances Section */}
+                <div className="lg:col-span-4 mt-4 mb-2">
+                  <h3 className="text-md font-semibold text-gray-700 border-b pb-2">Earnings / Allowances</h3>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Allowances (₹)</label>
-                  <input type="number" min="0" step="0.01" name="allowances" value={formData.allowances} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Basic Salary (₹) *</label>
+                  <input type="number" required min="0" step="0.01" name="baseSalary" value={formData.baseSalary} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Other Deductions (₹)</label>
-                  <input type="number" min="0" step="0.01" name="otherDeductions" value={formData.otherDeductions} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">House Rent allowance (₹)</label>
+                  <input type="number" min="0" step="0.01" name="houseRentAllowance" value={formData.houseRentAllowance} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Leave Travel Allowance (₹)</label>
+                  <input type="number" min="0" step="0.01" name="leaveTravelAllowance" value={formData.leaveTravelAllowance} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Four wheeler maintenance (₹)</label>
+                  <input type="number" min="0" step="0.01" name="fourWheelerMaintenance" value={formData.fourWheelerMaintenance} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Telephone and Internet (₹)</label>
+                  <input type="number" min="0" step="0.01" name="telephoneAndInternet" value={formData.telephoneAndInternet} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Professional Development (₹)</label>
+                  <input type="number" min="0" step="0.01" name="professionalDevelopment" value={formData.professionalDevelopment} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Special Allowance (₹)</label>
+                  <input type="number" min="0" step="0.01" name="specialAllowance" value={formData.specialAllowance} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                </div>
+
+                {/* Deductions Section */}
+                <div className="lg:col-span-4 mt-6 mb-2">
+                  <h3 className="text-md font-semibold text-gray-700 border-b pb-2">Deductions</h3>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Employer Contribution to PF (₹)</label>
+                  <input type="number" min="0" step="0.01" name="employerPf" value={formData.employerPf} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Professional Tax (₹)</label>
+                  <input type="number" min="0" step="0.01" name="professionalTax" value={formData.professionalTax} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Insurance (₹)</label>
+                  <input type="number" min="0" step="0.01" name="insurance" value={formData.insurance} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gratuity (₹)</label>
+                  <input type="number" min="0" step="0.01" name="gratuity" value={formData.gratuity} onChange={handleInputChange} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0" />
+                </div>
+
+                {/* Dynamic Other Deductions */}
+                <div className="lg:col-span-4">
+                  <div className="flex items-center justify-between mb-3 mt-4">
+                    <label className="block text-sm font-medium text-gray-700">Other Deductions</label>
+                    <button type="button" onClick={addOtherDeduction} className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-lg flex items-center gap-1 transition-colors">
+                      <Plus size={14} /> Add Row
+                    </button>
+                  </div>
+                  {formData.otherDeductionsList.length === 0 && (
+                    <div className="text-sm text-gray-400 italic">No other deductions added.</div>
+                  )}
+                  {formData.otherDeductionsList.map((deduction, index) => (
+                    <div key={index} className="flex gap-4 mb-3 items-start">
+                      <div className="flex-1">
+                        <input type="text" value={deduction.name} onChange={(e) => handleOtherDeductionChange(index, 'name', e.target.value)} placeholder={`Other Deduction ${index + 1}`} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required />
+                      </div>
+                      <div className="flex-1">
+                        <input type="number" min="0" step="0.01" value={deduction.amount} onChange={(e) => handleOtherDeductionChange(index, 'amount', e.target.value)} placeholder="Amount (₹)" className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required />
+                      </div>
+                      <button type="button" onClick={() => removeOtherDeduction(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors mt-0.5">
+                        <Search className="w-5 h-5 hidden" /> {/* Hidden icon trick or just delete icon */}
+                        <span className="font-bold">X</span>
+                      </button>
+                    </div>
+                  ))}
                 </div>
                 <div className="lg:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Upload Payslip (PDF)</label>

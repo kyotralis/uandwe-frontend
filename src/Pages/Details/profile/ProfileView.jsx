@@ -39,11 +39,11 @@ const DocumentLinkRow = ({ label, link }) => (
 const SectionCard = ({ icon: Icon, title, children }) => (
   <div className="bg-white rounded-2xl px-8 py-7 mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] border border-black/[0.04]">
     <div className="flex items-center gap-2.5 mb-5">
-      <div className="w-[34px] h-[34px] rounded-[9px] bg-[#fdf4ec] flex items-center justify-center text-[#e4956a] shrink-0">
+      <div className="w-[34px] h-[34px] rounded-[9px] bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
         <Icon size={16} />
       </div>
       <span className="text-[17px] text-[#1a1a2e] font-semibold">{title}</span>
-      <div className="flex-1 h-px bg-gradient-to-r from-[#e8e0d0] to-transparent" />
+      <div className="flex-1 h-px bg-gradient-to-r from-blue-100 to-transparent" />
     </div>
     {children}
   </div>
@@ -268,16 +268,29 @@ const ProfileView = memo(({ data, onBackToHome }) => {
 
             {/* ── DOCUMENTS TAB ── */}
             {activeTab === "documents" && (
-              <SectionCard icon={FileText} title="Educational & Professional Documents">
-                <div className="grid grid-cols-2 gap-3 max-[700px]:grid-cols-1">
-                  <DocumentLinkRow label="10th Certificate"            link={data.tenthCertificateLink} />
-                  <DocumentLinkRow label="12th / PUC Certificate"      link={data.twelfthCertificateLink} />
-                  <DocumentLinkRow label="Graduation Certificate"      link={data.graduationCertificateLink} />
-                  <DocumentLinkRow label="Post Graduation Certificate" link={data.postGraduationCertificateLink} />
-                  <DocumentLinkRow label="Resume / CV"                 link={data.resumeDocumentLink} />
-                  <DocumentLinkRow label="Visa Document"               link={data.visaDocumentLink} />
-                </div>
-              </SectionCard>
+              <>
+                <SectionCard icon={FileText} title="Educational & Professional Documents">
+                  <div className="grid grid-cols-2 gap-3 max-[700px]:grid-cols-1">
+                    <DocumentLinkRow label="10th Certificate"            link={data.tenthCertificateLink} />
+                    <DocumentLinkRow label="12th / PUC Certificate"      link={data.twelfthCertificateLink} />
+                    <DocumentLinkRow label="Graduation Certificate"      link={data.graduationCertificateLink} />
+                    <DocumentLinkRow label="Post Graduation Certificate" link={data.postGraduationCertificateLink} />
+                    <DocumentLinkRow label="Resume / CV"                 link={data.resumeDocumentLink} />
+                    <DocumentLinkRow label="Visa Document"               link={data.visaDocumentLink} />
+                    <DocumentLinkRow label="Relieving Letter 1"          link={data.relievingLetter1Link} />
+                    <DocumentLinkRow label="Relieving Letter 2"          link={data.relievingLetter2Link} />
+                    <DocumentLinkRow label="PF Passbook"                 link={data.pfPassbookLink} />
+                  </div>
+                </SectionCard>
+                <SectionCard icon={Building} title="PF Details">
+                  <div className="grid grid-cols-2 gap-0 max-[700px]:grid-cols-1">
+                    <InfoRow label="Previous UAN"            value={data.previousUan} />
+                    <InfoRow label="First Time Employment"   value={data.firstTimeEmployment} />
+                    <InfoRow label="PF Nominee Name"         value={data.pfNomineeName} />
+                    <InfoRow label="PF Nominee Relationship" value={data.pfNomineeRelationship} />
+                  </div>
+                </SectionCard>
+              </>
             )}
 
             {/* ── EMPLOYMENT TAB ── */}

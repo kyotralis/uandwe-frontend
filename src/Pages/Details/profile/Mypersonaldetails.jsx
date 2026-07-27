@@ -12,6 +12,8 @@ import { useCompany } from "../../../context/CompanyContext"
 import ProfileStatusCard from "./ProfileStatusCard";
 import ProfileView from "./ProfileView";  // Make sure ProfileView.jsx also exists in the same folder
 import Button from "../../../components/Button";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import DashboardLayout, { DashboardContainer } from "../../../components/dashboard/DashboardLayout";
 import DashboardHeader from "../../../components/dashboard/DashboardHeader";
 import { API_BASE_URL as GLOBAL_API_BASE_URL } from '../../../config/constants.js';
@@ -731,6 +733,9 @@ const ProfileFormComponent = memo(({
   onTenthRemove, onTwelfthRemove, onResumeRemove, onVisaRemove, onProfilePhotoRemove,
   graduationDocument, postGraduationDocument, onGraduationUpload, onPostGraduationUpload,
   onGraduationRemove, onPostGraduationRemove, documentErrors,
+  relievingLetter1Document, onRelievingLetter1Upload, onRelievingLetter1Remove,
+  relievingLetter2Document, onRelievingLetter2Upload, onRelievingLetter2Remove,
+  pfPassbookDocument, onPfPassbookUpload, onPfPassbookRemove,
   demands, showDemandDropdown, setShowDemandDropdown, onDemandSelect,
   currentUserRole, completion, skills, onAddSkill, onRemoveSkill, onSkillInputChange, skillInput,
   declarationChecked, onDeclarationChange, declarationError
@@ -846,7 +851,31 @@ const ProfileFormComponent = memo(({
                 <div className="group/field"><Label>Middle name</Label><StableInput name="middleName" value={formData.middleName} onChange={onChange} className={iCls("middleName")} placeholder="Middle name" /></div>
                 <div className="group/field"><Label required>Last name</Label><StableInput name="lastName" value={formData.lastName} onChange={onChange} onBlur={onBlur} className={iCls("lastName")} placeholder="Last name" /><FieldError msg={fieldErrors.lastName || serverErrors.lastName} /></div>
                 <div className="group/field"><Label required>Gender</Label><StableSelect name="gender" value={formData.gender} onChange={onChange} className={iCls("gender")}><option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option><option value="Prefer not to say">Prefer not to say</option></StableSelect><FieldError msg={fieldErrors.gender} /></div>
-                <div className="group/field"><Label required>Date of birth</Label><StableInput type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={onChange} onBlur={onBlur} className={iCls("dateOfBirth")} /><FieldError msg={fieldErrors.dateOfBirth} /></div>
+                <div className="group/field">
+                  <Label required>Date of birth</Label>
+                  <DatePicker
+                    selected={formData.dateOfBirth ? new Date(formData.dateOfBirth) : null}
+                    onChange={(date) => {
+                      if (date) {
+                        const offset = date.getTimezoneOffset();
+                        const formattedDate = new Date(date.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+                        onChange({ target: { name: "dateOfBirth", value: formattedDate } });
+                      } else {
+                        onChange({ target: { name: "dateOfBirth", value: "" } });
+                      }
+                    }}
+                    onBlur={() => onBlur({ target: { name: "dateOfBirth", value: formData.dateOfBirth } })}
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                    dateFormat="dd-MM-yyyy"
+                    className={iCls("dateOfBirth")}
+                    wrapperClassName="w-full"
+                    placeholderText="Select Date of Birth"
+                    maxDate={new Date()} // Prevent future dates
+                  />
+                  <FieldError msg={fieldErrors.dateOfBirth} />
+                </div>
                 <div className="group/field"><Label required>Marital status</Label><StableSelect name="maritalStatus" value={formData.maritalStatus} onChange={onChange} onBlur={onBlur} className={iCls("maritalStatus")}><option value="">Select status</option><option value="Single">Single</option><option value="Married">Married</option><option value="Divorced">Divorced</option><option value="Widowed">Widowed</option><option value="Separated">Separated</option></StableSelect><FieldError msg={fieldErrors.maritalStatus} /></div>
                 <div className="group/field"><Label required>Nationality</Label><StableSelect name="nationality" value={formData.nationality} onChange={onChange} onBlur={onBlur} className={iCls("nationality")}><option value="">Select nationality</option><option value="INDIA">INDIA</option><option value="USA">USA</option><option value="CHINA">CHINA</option></StableSelect><FieldError msg={fieldErrors.nationality} /></div>
               </div>
@@ -898,7 +927,7 @@ const ProfileFormComponent = memo(({
 
           {/* Documents Section */}
           <div id="sec-documents" className="scroll-mt-20 relative z-[24]">
-            <SectionCard icon={FileText} title="Educational & Other Documents" subtitle="Certificates and additional documents">
+            <SectionCard icon={FileText} title="Educational & Other Documents" subtitle="Certificates, Relieving letters and PF details">
               <div className="grid grid-cols-2 gap-6">
                 <DocumentUpload
                   label="10th Certificate"
@@ -953,7 +982,41 @@ const ProfileFormComponent = memo(({
                   onRemove={onVisaRemove}
                   error={documentErrors?.visa}
                 />
-                <div className="group/upload">
+                <DocumentUpload
+                  label="Relieving Letter 1"
+                  document={relievingLetter1Document}
+                  existingLink={formData.relievingLetter1Link}
+                  onUpload={onRelievingLetter1Upload}
+                  onRemove={onRelievingLetter1Remove}
+                  error={documentErrors?.relievingLetter1}
+                />
+                <DocumentUpload
+                  label="Relieving Letter 2"
+                  document={relievingLetter2Document}
+                  existingLink={formData.relievingLetter2Link}
+                  onUpload={onRelievingLetter2Upload}
+                  onRemove={onRelievingLetter2Remove}
+                  error={documentErrors?.relievingLetter2}
+                />
+                <DocumentUpload
+                  label="PF Passbook Screenshot"
+                  document={pfPassbookDocument}
+                  existingLink={formData.pfPassbookLink}
+                  onUpload={onPfPassbookUpload}
+                  onRemove={onPfPassbookRemove}
+                  error={documentErrors?.pfPassbook}
+                />
+                
+                <div className="col-span-2 mt-4"><hr className="border-gray-200" /><h4 className="mt-4 font-semibold text-gray-700">PF Details</h4></div>
+                
+                <div className="group/field"><Label>First Time Employment</Label><StableSelect name="firstTimeEmployment" value={formData.firstTimeEmployment} onChange={onChange} className={iCls("firstTimeEmployment")}><option value="">Select option</option><option value="Yes">Yes</option><option value="No">No</option></StableSelect></div>
+                {formData.firstTimeEmployment === "No" && (
+                  <div className="group/field"><Label>Previous UAN ID (If you had PF before)</Label><StableInput name="previousUan" value={formData.previousUan} onChange={onChange} onBlur={onBlur} className={iCls("previousUan")} placeholder="Previous UAN ID" /><FieldError msg={fieldErrors.previousUan} /></div>
+                )}
+                <div className="group/field"><Label>PF Nominee Name</Label><StableInput name="pfNomineeName" value={formData.pfNomineeName} onChange={onChange} onBlur={onBlur} className={iCls("pfNomineeName")} placeholder="PF Nominee Name" /><FieldError msg={fieldErrors.pfNomineeName} /></div>
+                <div className="group/field"><Label>PF Nominee Relationship</Label><StableInput name="pfNomineeRelationship" value={formData.pfNomineeRelationship} onChange={onChange} onBlur={onBlur} className={iCls("pfNomineeRelationship")} placeholder="e.g. Father, Mother, Spouse" /><FieldError msg={fieldErrors.pfNomineeRelationship} /></div>
+
+                <div className="col-span-2 group/upload mt-4">
                   <Label required>Profile Photo</Label>
 
                   {profilePhotoDocument ? (
@@ -1030,7 +1093,28 @@ const ProfileFormComponent = memo(({
                 <div className="group/field"><Label>Supervisor</Label><StableInput name="supervisor" value={formData.supervisor} readOnly disabled className={disabledInput} /></div>
                 <div className="group/field"><Label>HR manager</Label><StableInput name="hr" value={formData.hr} readOnly disabled className={disabledInput} /></div>
                 <div className="group/field"><Label>Visa type</Label><StableSelect name="visaType" value={formData.visaType} onChange={onChange} className={iCls("visaType")}><option value="">Select visa type</option><option value="H-1B">H-1B</option><option value="L-1">L-1</option><option value="F-1 OPT">F-1 OPT</option><option value="O-1">O-1</option><option value="TN">TN</option><option value="Work Permit">Work Permit</option><option value="Permanent Resident">Permanent Resident</option><option value="Citizen / No Visa Required">Citizen / No Visa Required</option><option value="Other">Other</option></StableSelect></div>
-                <div className="group/field"><Label>Visa end date</Label><StableInput type="date" name="visaEndDate" value={formData.visaEndDate} onChange={onChange} className={iCls("visaEndDate")} /></div>
+                <div className="group/field">
+                  <Label>Visa end date</Label>
+                  <DatePicker
+                    selected={formData.visaEndDate ? new Date(formData.visaEndDate) : null}
+                    onChange={(date) => {
+                      if (date) {
+                        const offset = date.getTimezoneOffset();
+                        const formattedDate = new Date(date.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+                        onChange({ target: { name: "visaEndDate", value: formattedDate } });
+                      } else {
+                        onChange({ target: { name: "visaEndDate", value: "" } });
+                      }
+                    }}
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                    dateFormat="dd-MM-yyyy"
+                    className={iCls("visaEndDate")}
+                    wrapperClassName="w-full"
+                    placeholderText="Select Visa End Date"
+                  />
+                </div>
               </div>
             </SectionCard>
           </div>
@@ -1154,7 +1238,8 @@ const Mypersonaldetails = () => {
     employeeNumber: "", assignedCompany: "", selectedDemand: "", skills: [], bankName: "", bankAccountNumber: "", ifscCode: "", bankBranch: "",
     aadharDocumentLink: "", panDocumentLink: "", ssnDocumentLink: "", nationalIdDocumentLink: "",
     tenthCertificateLink: "", twelfthCertificateLink: "", resumeDocumentLink: "",
-    visaDocumentLink: "", profilePhotoLink: "", graduationCertificateLink: "", postGraduationCertificateLink: "", rejectionReason: ""
+    visaDocumentLink: "", profilePhotoLink: "", graduationCertificateLink: "", postGraduationCertificateLink: "", rejectionReason: "",
+    relievingLetter1Link: "", relievingLetter2Link: "", pfPassbookLink: "", previousUan: "", firstTimeEmployment: "", pfNomineeName: "", pfNomineeRelationship: ""
   });
 
   const API_BASE_URL = GLOBAL_API_BASE_URL;
@@ -1329,6 +1414,18 @@ const Mypersonaldetails = () => {
   const handleGraduationRemove = () => setGraduationDocument(null);
   const handlePostGraduationRemove = () => setPostGraduationDocument(null);
 
+  const [relievingLetter1Document, setRelievingLetter1Document] = useState(null);
+  const [relievingLetter2Document, setRelievingLetter2Document] = useState(null);
+  const [pfPassbookDocument, setPfPassbookDocument] = useState(null);
+
+  const handleRelievingLetter1Upload = (file) => { setRelievingLetter1Document(file); setDocumentErrors(prev => ({ ...prev, relievingLetter1: "" })); };
+  const handleRelievingLetter2Upload = (file) => { setRelievingLetter2Document(file); setDocumentErrors(prev => ({ ...prev, relievingLetter2: "" })); };
+  const handlePfPassbookUpload = (file) => { setPfPassbookDocument(file); setDocumentErrors(prev => ({ ...prev, pfPassbook: "" })); };
+
+  const handleRelievingLetter1Remove = () => setRelievingLetter1Document(null);
+  const handleRelievingLetter2Remove = () => setRelievingLetter2Document(null);
+  const handlePfPassbookRemove = () => setPfPassbookDocument(null);
+
   // Skills handlers
   const handleAddSkill = () => {
     if (skillInput.trim() && !skills.includes(skillInput.trim())) {
@@ -1400,7 +1497,11 @@ const Mypersonaldetails = () => {
             tenthCertificateLink: d.tenthCertificateLink || "", twelfthCertificateLink: d.twelfthCertificateLink || "",
             resumeDocumentLink: d.resumeDocumentLink || "", visaDocumentLink: d.visaDocumentLink || "",
             profilePhotoLink: d.profilePhotoLink || "", graduationCertificateLink: d.graduationCertificateLink || "",
-            postGraduationCertificateLink: d.postGraduationCertificateLink || "", rejectionReason: d.profileRejectionReason || ""
+            postGraduationCertificateLink: d.postGraduationCertificateLink || "", rejectionReason: d.profileRejectionReason || "",
+            relievingLetter1Link: d.relievingLetter1Link || "", relievingLetter2Link: d.relievingLetter2Link || "",
+            pfPassbookLink: d.pfPassbookLink || "", previousUan: d.previousUan || "",
+            firstTimeEmployment: d.firstTimeEmployment || "", pfNomineeName: d.pfNomineeName || "",
+            pfNomineeRelationship: d.pfNomineeRelationship || ""
           });
           setSkills(d.skills || []);
         } else {
@@ -1560,6 +1661,9 @@ const Mypersonaldetails = () => {
       if (profilePhotoDocument) formDataToSend.append("profilePhoto", profilePhotoDocument);
       if (graduationDocument) formDataToSend.append("graduationCertificate", graduationDocument);
       if (postGraduationDocument) formDataToSend.append("postGraduationCertificate", postGraduationDocument);
+      if (relievingLetter1Document) formDataToSend.append("relievingLetter1", relievingLetter1Document);
+      if (relievingLetter2Document) formDataToSend.append("relievingLetter2", relievingLetter2Document);
+      if (pfPassbookDocument) formDataToSend.append("pfPassbook", pfPassbookDocument);
 
       // Check if this is a resubmission (profile was previously rejected)
       const isResubmit = profileStatus === "REJECTED";
@@ -1721,6 +1825,15 @@ const Mypersonaldetails = () => {
         onGraduationRemove={handleGraduationRemove}
         onPostGraduationRemove={handlePostGraduationRemove}
         documentErrors={documentErrors}
+        relievingLetter1Document={relievingLetter1Document}
+        onRelievingLetter1Upload={handleRelievingLetter1Upload}
+        onRelievingLetter1Remove={handleRelievingLetter1Remove}
+        relievingLetter2Document={relievingLetter2Document}
+        onRelievingLetter2Upload={handleRelievingLetter2Upload}
+        onRelievingLetter2Remove={handleRelievingLetter2Remove}
+        pfPassbookDocument={pfPassbookDocument}
+        onPfPassbookUpload={handlePfPassbookUpload}
+        onPfPassbookRemove={handlePfPassbookRemove}
         demands={demands}
         showDemandDropdown={showDemandDropdown}
         setShowDemandDropdown={setShowDemandDropdown}

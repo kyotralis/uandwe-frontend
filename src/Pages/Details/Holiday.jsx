@@ -473,7 +473,7 @@ const Holiday = () => {
               <div className="w-5 h-5 flex justify-center items-center rounded-full bg-emerald-50 border border-emerald-200 text-xs">🏖️</div> Leave
             </span>
             <span className="flex items-center gap-1">
-              <div className="w-5 h-5 flex justify-center items-center rounded-full bg-purple-50 border border-purple-200 text-xs">💻</div> WFH
+              <div className="w-5 h-5 flex justify-center items-center rounded-full bg-purple-50 border border-purple-200 text-xs">🏠</div> WFH
             </span>
             <span className="flex items-center gap-1">
               <span className="w-4 h-4 rounded-md bg-blue-600 inline-block ml-2"></span> Today
@@ -556,7 +556,7 @@ const Holiday = () => {
                             <div className={`w-7 h-7 flex items-center justify-center rounded-full cursor-pointer mx-auto
                             ${approvedLeave.leaveType === 'Work From Home' ? 'bg-purple-50 border border-purple-200' : 'bg-emerald-50 border border-emerald-200'}`}
                             >
-                              <span className="text-sm leading-none select-none">{approvedLeave.leaveType === 'Work From Home' ? '💻' : '🏖️'}</span>
+                              <span className="text-sm leading-none select-none">{approvedLeave.leaveType === 'Work From Home' ? '🏠' : '🏖️'}</span>
                             </div>
                             <span className={`block text-center text-[10px] font-semibold leading-tight mt-0.5 ${approvedLeave.leaveType === 'Work From Home' ? 'text-purple-700' : 'text-emerald-700'}`}>{day}</span>
                           </div>

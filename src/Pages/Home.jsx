@@ -487,6 +487,13 @@ const Home = () => {
         navigate("/timesheet");
       }
     }
+    else if (title === "News Feeder") {
+      if (userRole === "Admin") {
+        navigate("/admin/news-feeder");
+      } else {
+        navigate("/news-feeder");
+      }
+    }
     else {
       setDevelopmentMessage(`UANDWE Knowledge Base: "${title}" is under development`);
       setShowDevelopmentMessage(true);
