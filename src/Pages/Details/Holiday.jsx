@@ -274,11 +274,19 @@ const Holiday = () => {
     const role = storedUser?.role;
     const client = storedUser?.clientName || storedUser?.assignedClient;
     if (role !== "Admin" && client) return [client];
-    return [...new Set(holidays.map((h) => h.group.name))];
+    const groups = [...new Set(holidays.map((h) => h.group.name))];
+    if (groups.includes("BangaloreUANDWE") && !groups.includes("BangaloreUANDWELabs")) {
+      groups.push("BangaloreUANDWELabs");
+    }
+    return groups;
   };
 
   const filteredByGroup = Array.isArray(holidays)
-    ? holidays.filter((h) => h.group.name === selectedGroup)
+    ? holidays.filter((h) => {
+        if (selectedGroup === "BangaloreUANDWELabs" && h.group.name === "BangaloreUANDWE") return true;
+        if (selectedGroup === "BangaloreUANDWE" && h.group.name === "BangaloreUANDWELabs") return true;
+        return h.group.name === selectedGroup;
+      })
     : [];
 
   // Build a map: "YYYY-MM-DD" => holiday info
