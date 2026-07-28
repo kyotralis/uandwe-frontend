@@ -100,8 +100,9 @@ const AdminHoliday = () => {
 
     // For admin, show all groups
     const groups = [...new Set(holidays.map((h) => h.group.name))];
-    if (groups.includes("BangaloreUANDWE") && !groups.includes("BangaloreUANDWELabs")) {
-      groups.push("BangaloreUANDWELabs");
+    if (groups.includes("BangaloreUANDWE")) {
+      if (!groups.includes("BangaloreUANDWELabs")) groups.push("BangaloreUANDWELabs");
+      if (!groups.includes("bangaloreuandwe labs")) groups.push("bangaloreuandwe labs");
     }
     return groups;
   };
@@ -110,6 +111,8 @@ const AdminHoliday = () => {
     ? holidays.filter((h) => {
         if (selectedGroup === "BangaloreUANDWELabs" && h.group.name === "BangaloreUANDWE") return true;
         if (selectedGroup === "BangaloreUANDWE" && h.group.name === "BangaloreUANDWELabs") return true;
+        if (selectedGroup === "bangaloreuandwe labs" && h.group.name === "BangaloreUANDWE") return true;
+        if (selectedGroup === "BangaloreUANDWE" && h.group.name === "bangaloreuandwe labs") return true;
         return h.group.name === selectedGroup;
       })
     : [];
@@ -434,7 +437,7 @@ const AdminHoliday = () => {
                         {userRole === "Admin" && (
                           <div className="mt-2">
                             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                              {selectedGroup === "BangaloreUANDWELabs" && item.group.name === "BangaloreUANDWE" ? "BangaloreUANDWELabs" : item.group.name}
+                              {(selectedGroup === "BangaloreUANDWELabs" || selectedGroup === "bangaloreuandwe labs") && item.group.name === "BangaloreUANDWE" ? selectedGroup : item.group.name}
                             </span>
                           </div>
                         )}
