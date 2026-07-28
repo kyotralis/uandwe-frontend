@@ -267,7 +267,7 @@ export default function LeaveManagement() {
   };
 
   const checkWfhLimit = (startDate) => {
-    if (!['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs'].includes(employeeDetails.company)) return true; // Disabled for others anyway
+    if (!['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs', 'bangaloreuandwe labs'].includes(employeeDetails.company)) return true; // Disabled for others anyway
     const existingWfhThisWeek = history.find(l => 
       l.leaveType === 'Work From Home' && 
       l.status !== 'Rejected' && 
@@ -318,6 +318,9 @@ export default function LeaveManagement() {
       setError("Please select both start and end date on the calendar.");
       return;
     }
+
+    const days = calculateTotalDays(inlineStartDate, inlineEndDate, '09:00', '18:00');
+
     if (days <= 0) {
       if (companyHolidays.includes(inlineStartDate) || companyHolidays.includes(inlineEndDate)) {
         toast.error("It is a holiday. Leave cannot be applied.");
@@ -345,7 +348,7 @@ export default function LeaveManagement() {
     }
 
     if (inlineLeaveType === 'Work From Home') {
-      if (!['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs'].includes(employeeDetails.company)) {
+      if (!['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs', 'bangaloreuandwe labs'].includes(employeeDetails.company)) {
         setError("WFH is available only for UANDWE Bangalore employees.");
         return;
       }
@@ -441,7 +444,7 @@ export default function LeaveManagement() {
     }
 
     if (formData.leaveType === 'Work From Home') {
-      if (!['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs'].includes(employeeDetails.company)) {
+      if (!['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs', 'bangaloreuandwe labs'].includes(employeeDetails.company)) {
         setError("WFH is available only for UANDWE Bangalore employees.");
         return;
       }
@@ -943,7 +946,7 @@ export default function LeaveManagement() {
                           <option value="">Select Type</option>
                           {LEAVE_TYPES.map(t => {
                             const isWfh = t === 'Work From Home';
-                            const isEligibleCompany = ['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs'].includes(employeeDetails.company);
+                            const isEligibleCompany = ['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs', 'bangaloreuandwe labs'].includes(employeeDetails.company);
                             let isLimitReached = false;
                             
                             if (isWfh && isEligibleCompany && inlineStartDate) {
@@ -1071,7 +1074,7 @@ export default function LeaveManagement() {
                       <option value="">Select Type</option>
                       {LEAVE_TYPES.map(t => {
                         const isWfh = t === 'Work From Home';
-                        const isEligibleCompany = ['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs'].includes(employeeDetails.company);
+                        const isEligibleCompany = ['UANDWE Bangalore', 'BangaloreUANDWE', 'bangaloreuandwelabs', 'BangaloreUANDWELabs', 'bangaloreuandwe labs'].includes(employeeDetails.company);
                         let isLimitReached = false;
                         
                         if (isWfh && isEligibleCompany && formData.startDate) {
