@@ -275,8 +275,9 @@ const Holiday = () => {
     const client = storedUser?.clientName || storedUser?.assignedClient;
     if (role !== "Admin" && client) return [client];
     const groups = [...new Set(holidays.map((h) => h.group.name))];
-    if (groups.includes("BangaloreUANDWE") && !groups.includes("BangaloreUANDWELabs")) {
-      groups.push("BangaloreUANDWELabs");
+    if (groups.includes("BangaloreUANDWE")) {
+      if (!groups.includes("BangaloreUANDWELabs")) groups.push("BangaloreUANDWELabs");
+      if (!groups.includes("bangaloreuandwe labs")) groups.push("bangaloreuandwe labs");
     }
     return groups;
   };
@@ -285,6 +286,8 @@ const Holiday = () => {
     ? holidays.filter((h) => {
         if (selectedGroup === "BangaloreUANDWELabs" && h.group.name === "BangaloreUANDWE") return true;
         if (selectedGroup === "BangaloreUANDWE" && h.group.name === "BangaloreUANDWELabs") return true;
+        if (selectedGroup === "bangaloreuandwe labs" && h.group.name === "BangaloreUANDWE") return true;
+        if (selectedGroup === "BangaloreUANDWE" && h.group.name === "bangaloreuandwe labs") return true;
         return h.group.name === selectedGroup;
       })
     : [];
@@ -537,7 +540,7 @@ const Holiday = () => {
                     const isSunday = (firstDay + day - 1) % 7 === 0;
                     const isSaturday = (firstDay + day - 1) % 7 === 6;
                     const isWeekend = isSunday || isSaturday;
-                    const approvedLeave = isWeekend ? null : approvedLeaves.find(l => dateKey >= l.startDate && dateKey <= l.endDate);
+                    const approvedLeave = isWeekend ? null : approvedLeaves.find(l => dateKey >= (l.startDate || "").substring(0, 10) && dateKey <= (l.endDate || "").substring(0, 10));
 
                     return (
                       <div
